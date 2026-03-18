@@ -74,16 +74,19 @@ def parse_product_info(item_data):
             
         item_id = basic.get('itemid', '')
         shop_id = basic.get('shopid', '')
+        image_hash = basic.get('image', '')
         
         # Link chuẩn của Shopee
         link = f"https://shopee.vn/product/{shop_id}/{item_id}"
+        image_url = f"https://down-vn.img.susercontent.com/file/{image_hash}" if image_hash else None
         
         return {
             "name": name,
             "price": price,
             "sold": historical_sold,
             "rating": rating,
-            "link": link
+            "link": link,
+            "image_url": image_url
         }
     except Exception as e:
         print(f"Error parsing item: {e}")

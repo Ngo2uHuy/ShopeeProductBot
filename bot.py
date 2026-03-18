@@ -65,24 +65,48 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 3. Lấy ra Top 3 sản phẩm
     top_3 = ranked_items[:3]
     
-    response = f"🎯 **Top {len(top_3)} sản phẩm tốt nhất cho '{keyword}'**\n\n"
-    for i, p in enumerate(top_3, 1):
-        price_str = f"{p['price']:,.0f} VND" if p['price'] > 0 else "Liên hệ"
-        # Escape các ký hiệu markdown nếu cần, tạm thời dùng format căn bản
-        response += (
-            f"{i}. *{p['name']}*\n"
-            f"💰 Giá: {price_str}\n"
-            f"⭐ Đánh giá: {p['rating']:.1f}/5\n"
-            f"📦 Đã bán: {p['sold']} sản phẩm\n"
-            f"🔗 Link: {p['link']}\n\n"
-        )
-        
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id, 
-        text=response, 
-        parse_mode='Markdown',
-        disable_web_page_preview=True
+    # Gửi sản phẩm TOP 1 với hình dạng "Ảnh + Tin nhắn" bắt mắt nhất
+    best_item = top_3[0]
+    best_price_str = f"{best_item['price']:,.0f} VND"
+    caption_top1 = (
+        f"🏆 **SẢN PHẨM HOÀN HẢO NHẤT** 🏆\n\n"
+        f"*{best_item['name']}*\n"
+        f"💰 Giá: {best_price_str}\n"
+        f"⭐ Đánh giá: {best_item['rating']:.1f}/5\n"
+        f"📦 Đã bán: {best_item['sold']}\n\n"
+        f"🔗 Mua ngay: {best_item['link']}\n"
     )
+    if best_item.get('image_url'):
+        try:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=best_item['image_url'],
+                caption=caption_top1,
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            # Fallback nếu link ảnh hỏng
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=caption_top1, parse_mode='Markdown')
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=caption_top1, parse_mode='Markdown')
+        
+    # Gửi các tùy chọn dự phòng (TOP 2, TOP 3)
+    if len(top_3) > 1:
+        alt_response = f"👀 **Các lựa chọn thay thế bạn nên xem:**\n\n"
+        for i, p in enumerate(top_3[1:], 2):
+            price_str = f"{p['price']:,.0f} VND" if p['price'] > 0 else "Liên hệ"
+            alt_response += (
+                f"{i}. *{p['name']}*\n"
+                f"💰 {price_str} | ⭐ {p['rating']:.1f} | 📦 Đã bán: {p['sold']}\n"
+                f"🔗 {p['link']}\n\n"
+            )
+            
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, 
+            text=alt_response, 
+            parse_mode='Markdown',
+            disable_web_page_preview=True
+        )
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
